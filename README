@@ -1,6 +1,6 @@
 (Make sure to uncompress data/elev.bin.bz2 to data/elev.bin before using)
 
-var elevation = require('./elevation')
+var elevation = require('elevation')
 
 elevation.at(-42.0, 72.0, function(err, meters) {
   // meters contains the elevation
