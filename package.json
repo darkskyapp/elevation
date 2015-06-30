@@ -1,0 +1,6 @@
+{
+  "name": "elevation",
+  "id": "elevation",
+  "version": "0.0.1",
+  "description": "Calculates elevation of a lat/lon with moderate resolution."
+}
