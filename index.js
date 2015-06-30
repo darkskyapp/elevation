@@ -1,23 +1,34 @@
-var fs    = require("fs")
+"use strict";
+var ELEV_FILE, HEIGHT, NULL_VAL, WIDTH, cache, fs, open, path;
 
-var WIDTH     = 7200,
-    HEIGHT    = 3600,
-    NULL_VAL  = -999,
-    ELEV_FILE = __dirname+'/data/elev.bin'
+cache = require("cache-helpers").once;
+fs    = require("fs");
+path  = require("path");
+
+WIDTH     = 7200;
+HEIGHT    = 3600;
+NULL_VAL  = -999;
+ELEV_FILE = path.join(__dirname, "data/elev.bin");
+
+open = cache(function(callback) {
+  fs.open(ELEV_FILE, "r", callback);
+});
 
 // Returns elevation in meters if it's available, or null otherwise.
 exports.at = function(lat, lon, callback) {
-  fs.open(ELEV_FILE, "r", function(err, fd) {
+  open(function(err, fd) {
+    var x, y;
+
     if(err)
-      callback(err)
+      callback(err);
     
     else {
-      var x = Math.round((180.0 + lon) * WIDTH / 360.0),
-          y = Math.round((90.0 - lat) * HEIGHT / 180.0)
+      x = Math.round((180.0 + lon) * ( WIDTH / 360.0));
+      y = Math.round(( 90.0 - lat) * (HEIGHT / 180.0));
 
       // Wrap and cap
-      x = x - Math.floor(x / WIDTH) * WIDTH
-      y = y < 0 ? 0 : (y > HEIGHT - 1 ? HEIGHT - 1 : y)
+      x = x - Math.floor(x / WIDTH) * WIDTH;
+      y = y < 0 ? 0 : (y > HEIGHT - 1 ? HEIGHT - 1 : y);
 
       fs.read(
         fd,
@@ -25,22 +36,21 @@ exports.at = function(lat, lon, callback) {
         0,
         2,
         (y * WIDTH + x) * 2,
-        function(err1, bytes, buf) {
-          fs.close(fd, function(err2) {
-            if(err1 || err2)
-              callback(err1 || err2, null)
+        function(err, bytes, buf) {
+          var v;
 
-            else if(bytes !== 2)
-              callback(new Error("unable to read elevation"), null)
+          if(err)
+            callback(err, null);
 
-            else {
-              var v = buf.readInt16LE(0)
+          else if(bytes !== 2)
+            callback(new Error("unable to read elevation"), null);
 
-              callback(null, v !== NULL_VAL ? v : null)
-            }
-          })
+          else {
+            v = buf.readInt16LE(0);
+            callback(null, v !== NULL_VAL ? v : null);
+          }
         }
-      )
+      );
     }
-  })
-}
+  });
+};
